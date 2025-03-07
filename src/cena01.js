@@ -1,11 +1,14 @@
-var primeiroContato = true;
-var inimigos = true;
+var primeiroContato = true;//Naturalmente true
+var inimigos = false;//Naturalmente false
 var golensAbatidos = 0;
 var placar;
+
 
 class Cena01 extends Phaser.Scene{
     constructor(){
         super({key: 'Cena01'});
+        this.golemLife = 3;
+        this.playerLife = 3;
     }
              
     preload(){
@@ -104,6 +107,12 @@ class Cena01 extends Phaser.Scene{
             frames: this.anims.generateFrameNumbers("golem", {start: 35, end: 46}),
             repeat: 1
         });
+        this.anims.create({
+            key: "golem-idle",
+            frameRate: 12,
+            frames: this.anims.generateFrameNumbers("golem", {start: 50, end: 61}),
+            repeat: -1
+        });
 
         //Cria animações das teclas
         this.anims.create({
@@ -121,7 +130,7 @@ class Cena01 extends Phaser.Scene{
         //Adiciona overlap do player com o dragão (interação)
         this.physics.add.overlap(this.player, this.dragao, () => {
 
-            if(this.keys.interaction.isDown){
+            if(this.keys.interaction.isDown && primeiroContato === true){
                 console.log("interação com o dragão");
                 this.chat();
             }
@@ -149,7 +158,9 @@ class Cena01 extends Phaser.Scene{
             if (this.keys.shift.isDown) {
                 this.player.setVelocityX(-300); // Aumenta a velocidade ao correr
                 if (this.keys.interaction.isDown && primeiroContato === false) {
-                    this.player.play("attack-run", true); // Executa a animação de ataque correndo
+                    setInterval(() => {//Cooldown do ataque
+                        this.player.play("attack-run", true); // Executa a animação de ataque correndo
+                        }, 1000);
                 } else {
                     this.player.play("walking", true); // Executa a animação de caminhada
                 }
@@ -162,7 +173,10 @@ class Cena01 extends Phaser.Scene{
             if (this.keys.shift.isDown) {
                 this.player.setVelocityX(300); // Aumenta a velocidade ao correr
                 if (this.keys.interaction.isDown && primeiroContato === false) {
-                    this.player.play("attack-run", true); // Executa a animação de ataque correndo
+                    setInterval(() => {//Cooldown do ataque
+                        this.player.play("attack-run", true); // Executa a animação de ataque correndo
+                        }, 1000);
+                    
                 } else {
                     this.player.play("walking", true); // Executa a animação de caminhada
                 }
@@ -173,7 +187,10 @@ class Cena01 extends Phaser.Scene{
         } else {
             this.player.setVelocityX(0); // Para o jogador quando nenhuma tecla de movimento está pressionada
             if (this.keys.interaction.isDown && primeiroContato === false) {
+                setInterval(() => {//Cooldown do ataque
                 this.player.play("attack", true); // Executa a animação de ataque
+                }, 1000);
+                
             } else {
                 this.player.play("idle", true); // Executa a animação de idle
             }
@@ -184,8 +201,6 @@ class Cena01 extends Phaser.Scene{
             this.player.setVelocityY(-500); // Faz o jogador pular
         }
 
-        if(inimigos === true){   
-            this.inimigos();}
 
     }
 
@@ -232,7 +247,7 @@ class Cena01 extends Phaser.Scene{
                 this.textbox.destroy();
                 this.box.setAlpha(100);
                 placar.setAlpha(100);
-                inimigos = true;
+                this.inimigos();
             }
 
         };
@@ -246,42 +261,55 @@ class Cena01 extends Phaser.Scene{
         return 0;
     } 
    
-    inimigos(){
-         /*
-        let playerAtack = false;
-        let golemAtack = false;
-        let golemLife = 3;
-
-        console.log("Função inimigos");
-        this.golem = this.physics.add.sprite(larguraJogo*0.8, this.floorCena01.y-265, "golem").setScale(0.5).setFlipX(true);
-        inimigos = false;
-
-        
-
-        do{
-            setTimeout(() => {
+    inimigos = function() {
+        if (!this.golemCreated) {
+            this.playerAttack = false;
+            this.golemAttack = false;
+            this.golemLife = 3;
+            this.golemCreated = true; // Marca que o golem foi criado
+    
+            console.log("Função inimigos");
+            this.golem = this.physics.add.sprite(larguraJogo * 0.8, this.floorCena01.y - 255, "golem").setScale(0.5).setFlipX(true);
+    
+            setInterval(() => { // Método loop condicionado a tempo
+                this.golem.stop("golem-attack");
+                this.golemAttack = false;
                 this.golem.setVelocityX(-50);
                 this.golem.play("golem-walking", true);
-                this.physics.add.overlap(this.player, this.golem, () => {
-                    this.golem.play("golem-attack", true);
-                    this.golemAtack = true;
+    
+                this.physics.add.overlap(this.player, this.golem, () => { // Verifica se o player colidiu com o golem
+                    if (!this.golemAttack) {
+                        this.golem.setVelocityX(0);
+                        this.golem.play("golem-idle", true);
+                        this.golemAttack = true;
+                        setTimeout(() => {
+                            this.golem.play("golem-attack", true)
+                            setTimeout(() => {
+                                this.golemAttack = false;
+                            }, 2000); // O ataque do golem dura 2 segundos
+                        }, 1000); // Golem ataca a cada 1 segundo
+    
+                        if (this.keys.interaction.isDown) {
+                            this.playerAttack = true;
+                        } else {
+                            this.playerAttack = false;
+                        }
+    
+                        if (this.playerAttack === true) {
+                            console.log(this.golemLife);
+                            this.golemLife--;
+                            if (this.golemLife === 0) {
+                                this.golem.play("golem-dying", true);
+                                this.golem.setVelocityX(0);
+                                this.golem.destroy();
+                                golensAbatidos++;
+                                placar.setText('Golens abatidos: ' + golensAbatidos);
+                                this.golemCreated = false; // Permite criar um novo golem na próxima chamada
+                            }
+                        }
+                    }
                 });
-            }, 3000);
+            }, 1000);
         }
-        while(golemLife =! 0);
-
-        this.physics.add.collider(this.golem, this.floorCena01);
-        this.physics.add.collider(this.player, this.golem, () => {
-            if(this.player.body.touching.right){
-                this.player.setVelocityX(-100);
-            }
-            if(this.player.body.touching.left){
-                this.player.setVelocityX(100);
-            }
-        });
- */
-    }
-   
-
-
+    };
 }
