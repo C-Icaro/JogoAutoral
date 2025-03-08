@@ -13,7 +13,7 @@ const config = {
             debug: true
         }
     },
-    scene: [Cena01, Menu]
+    scene: [Menu,Cena01]//Cenas utilizadas
 };
 
-const game = new Phaser.Game(config);
+const game = new Phaser.Game(config);//Criação do game com as configs entregues
