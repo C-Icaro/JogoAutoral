@@ -22,6 +22,10 @@ class Cena01 extends Phaser.Scene{
         this.load.spritesheet("player", "assets/player02Sheet.png", { frameWidth: 900, frameHeight: 900 });
         this.load.spritesheet("golem", "assets/golem01Sheet.png", { frameWidth: 720, frameHeight: 480 });
         this.load.image("teclas", "assets/teclas.png");
+
+        this.add.text(larguraJogo*0.5, alturaJogo * 0.5, "Carregando...", {
+            font: "20px Blackletter", fill: "#ffffff", align: "left", fontWeight: "black"//Configurações de texto
+        }).setOrigin(0.5, 0.5);
     }
     
     create(){
